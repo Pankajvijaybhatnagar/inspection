@@ -67,149 +67,6 @@ $createOTPTableSql = 'CREATE TABLE IF NOT EXISTS otps (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
 $db->createTable($createOTPTableSql);
 
-$createEventsTableSql = 'CREATE TABLE IF NOT EXISTS events (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    created_by INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    description MEDIUMTEXT DEFAULT NULL,
-    excerpt VARCHAR(500) DEFAULT NULL,
-    cover_image_url VARCHAR(255) DEFAULT NULL,
-    image_alt_text VARCHAR(255) DEFAULT NULL,
-    start_date DATE NOT NULL,
-    start_time TIME DEFAULT NULL,
-    end_date DATE NOT NULL,
-    end_time TIME DEFAULT NULL,
-    location_name VARCHAR(255) DEFAULT NULL,
-    location_address VARCHAR(255) DEFAULT NULL,
-    location_map_url VARCHAR(255) DEFAULT NULL,
-    meta_title VARCHAR(255) DEFAULT NULL,
-    meta_description VARCHAR(255) DEFAULT NULL,
-    meta_keywords VARCHAR(255) DEFAULT NULL,
-    canonical_url VARCHAR(255) DEFAULT NULL,
-    status ENUM("draft", "published", "archived") DEFAULT "draft",
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($createEventsTableSql);
-
-$createBlogCategoriesTableSql = 'CREATE TABLE IF NOT EXISTS blog_categories (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(255) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($createBlogCategoriesTableSql);
-
-$createBlogsTableSql = 'CREATE TABLE IF NOT EXISTS blogs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    created_by INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    content MEDIUMTEXT DEFAULT NULL,
-    excerpt VARCHAR(500) DEFAULT NULL,
-    featured_image_url VARCHAR(255) DEFAULT NULL,
-    image_alt_text VARCHAR(255) DEFAULT NULL,
-    meta_title VARCHAR(255) DEFAULT NULL,
-    meta_description VARCHAR(255) DEFAULT NULL,
-    meta_keywords VARCHAR(255) DEFAULT NULL,
-    canonical_url VARCHAR(255) DEFAULT NULL,
-    status ENUM("draft", "published", "archived") DEFAULT "draft",
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($createBlogsTableSql);
-
-$createBlogCategoryPivotTableSql = 'CREATE TABLE IF NOT EXISTS blog_category_pivot (
-    blog_id INT NOT NULL,
-    category_id INT NOT NULL,
-    PRIMARY KEY (blog_id, category_id),
-    FOREIGN KEY (blog_id) REFERENCES blogs(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES blog_categories(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($createBlogCategoryPivotTableSql);
-
-$createInquiriesTableSql = 'CREATE TABLE IF NOT EXISTS inquiries (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    phone VARCHAR(20) DEFAULT NULL,
-    subject VARCHAR(255) DEFAULT NULL,
-    message TEXT NOT NULL,
-    status ENUM("new", "in_progress", "resolved") DEFAULT "new",
-    resolved_by INT DEFAULT NULL,
-    resolved_at DATETIME DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($createInquiriesTableSql);
-
-$creteMasikPrawasTable= 'CREATE TABLE IF NOT EXISTS masik_prawas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description MEDIUMTEXT DEFAULT NULL,
-    cover_image_url VARCHAR(255) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($creteMasikPrawasTable);
-
-$creteMasikPatrikaTable = 'CREATE TABLE IF NOT EXISTS masik_patrika (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    issue_date DATE DEFAULT NULL,
-    description MEDIUMTEXT DEFAULT NULL,
-    cover_image_url VARCHAR(255) DEFAULT NULL,
-    pdf_url VARCHAR(255) DEFAULT NULL,
-    status ENUM("draft", "published", "archived") NOT NULL DEFAULT "draft",
-    slug VARCHAR(255) NOT NULL,
-    image_alt_text VARCHAR(255) DEFAULT NULL,
-    meta_title VARCHAR(70) DEFAULT NULL,
-    meta_description VARCHAR(170) DEFAULT NULL,
-    meta_keywords VARCHAR(255) DEFAULT NULL,
-    canonical_url VARCHAR(255) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    UNIQUE KEY (slug)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($creteMasikPatrikaTable);
-
-$alterEventsTableSql = 'ALTER TABLE `events` ADD COLUMN `event_type` ENUM("satsang", "discourse", "festival", "jayanti", "celebration", "other") DEFAULT "other" NOT NULL AFTER `status`';
-$db->alterTable('events', $alterEventsTableSql);
-
-$createLiveDarshanTableSql = 'CREATE TABLE IF NOT EXISTS live_darshan (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    created_by INT NOT NULL,
-    updated_by INT DEFAULT NULL,
-    title VARCHAR(255) NOT NULL,
-    description MEDIUMTEXT DEFAULT NULL,
-    stream_url VARCHAR(255) NOT NULL,
-    status ENUM("upcoming", "live", "archived") NOT NULL DEFAULT "upcoming",
-    slug VARCHAR(255) NOT NULL UNIQUE,
-    cover_image_url VARCHAR(255) DEFAULT NULL,
-    image_alt_text VARCHAR(255) DEFAULT NULL,
-    meta_title VARCHAR(255) DEFAULT NULL,
-    meta_description VARCHAR(255) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
-$db->createTable($createLiveDarshanTableSql);
-
-$alterInquiryType = 'ALTER TABLE `inquiries` ADD COLUMN `type` VARCHAR(100) DEFAULT NULL AFTER `phone`';
-$db->alterTable('inquiries', $alterInquiryType);
-
-$alterInquiryRemark = 'ALTER TABLE `inquiries` ADD COLUMN `remark` TEXT DEFAULT NULL AFTER `status`';
-$db->alterTable('inquiries', $alterInquiryRemark);
-
-echo "All tables created successfully.";
 
 
 
@@ -223,7 +80,7 @@ echo "All tables created successfully.";
 
 
 // --- Table for Teacher Self-Appraisal Form ---
- $createTeacherAppraisalsTableSql = 'CREATE TABLE IF NOT EXISTS teacher_appraisals (
+$createTeacherAppraisalsTableSql = 'CREATE TABLE IF NOT EXISTS teacher_appraisals (
     id INT AUTO_INCREMENT PRIMARY KEY,
     created_by INT NOT NULL,
     
@@ -351,11 +208,11 @@ echo "All tables created successfully.";
     
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
- $db->createTable($createTeacherAppraisalsTableSql);
+$db->createTable($createTeacherAppraisalsTableSql);
 
 
 // --- Table for School Inspection Form ---
- $createSchoolInspectionsTableSql = 'CREATE TABLE IF NOT EXISTS school_inspections (
+$createSchoolInspectionsTableSql = 'CREATE TABLE IF NOT EXISTS school_inspections (
     id INT AUTO_INCREMENT PRIMARY KEY,
     created_by INT NOT NULL,
 
@@ -558,9 +415,9 @@ echo "All tables created successfully.";
 
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
- $db->createTable($createSchoolInspectionsTableSql);
+$db->createTable($createSchoolInspectionsTableSql);
 
- // --- Minimal School List Table for Dropdown ---
+// --- Minimal School List Table for Dropdown ---
 $createSchoolListTableSql = 'CREATE TABLE IF NOT EXISTS school_list (
     id INT AUTO_INCREMENT PRIMARY KEY,
     school_name VARCHAR(255) NOT NULL,
