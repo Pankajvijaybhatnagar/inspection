@@ -1,0 +1,429 @@
+# Inspection & Appraisal API Documentation
+
+This document outlines the API endpoints for the Inspection & Appraisal management system.
+
+## Base URL
+
+All endpoint URLs are relative to your domain. For example: `https://yourdomain.com/v1/`
+
+## Authentication
+
+Most endpoints are protected and require a JSON Web Token (JWT) to be sent in the `Authorization` header.
+
+**Header Format:** `Authorization: Bearer <your_jwt_token>`
+
+The JWT is obtained upon successful login or registration. It contains user information, including their role (`superadmin`, `school`, `teacher`), which determines their access level for various endpoints.
+
+---
+
+---
+
+## 1. Authentication
+
+These endpoints handle user registration, login, and verification.
+
+### 1.1 User Registration
+
+Creates a new user account with a default role of `teacher`.
+
+*   **Endpoint:** `POST /v1/auth/register.php`
+*   **Method:** `POST`
+*   **Authentication:** None
+*   **Request Body:**
+    ```json
+    {
+      "name": "John Doe",
+      "email": "teacher@example.com",
+      "password": "a_strong_password"
+    }
+    ```
+*   **Success Response (201 Created):**
+    ```json
+    {
+      "status": true,
+      "message": "User registered successfully."
+    }
+    ```
+*   **Error Responses:**
+    *   `400 Bad Request`: Missing required fields.
+    *   `409 Conflict`: Email is already registered.
+
+### 1.2 Email & Password Login
+
+Authenticates a user with their email and password and returns a JWT.
+
+*   **Endpoint:** `POST /v1/auth/login.php`
+*   **Method:** `POST`
+*   **Authentication:** None
+*   **Request Body:**
+    ```json
+    {
+      "email": "user@example.com",
+      "password": "user_password"
+    }
+    ```
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "user": {
+        "id": 1,
+        "name": "John Doe",
+        "email": "user@example.com",
+        "avatar": "path/to/avatar.jpg",
+        "role": "teacher"
+      },
+      "access_token": "your_jwt_access_token",
+      "refresh_token": "your_jwt_refresh_token"
+    }
+    ```
+*   **Error Responses:**
+    *   `401 Unauthorized`: Invalid credentials.
+    *   `403 Forbidden`: Email not yet verified.
+
+### 1.3 Google Login
+
+Authenticates or registers a user via a Google ID token and returns a JWT.
+
+*   **Endpoint:** `POST /v1/auth/google.php`
+*   **Method:** `POST`
+*   **Authentication:** None
+*   **Request Body:**
+    ```json
+    {
+      "id_token": "google_id_token_from_frontend"
+    }
+    ```
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "user": {
+        "id": 1,
+        "name": "John Doe",
+        "email": "user@example.com",
+        "avatar": "path/to/avatar.jpg",
+        "role": "teacher"
+      },
+      "access_token": "your_jwt_access_token",
+      "refresh_token": "your_jwt_refresh_token"
+    }
+    ```
+*   **Error Response:**
+    *   `401 Unauthorized`: Invalid Google token.
+
+---
+
+---
+
+## 2. User Management (Admin)
+
+Admin endpoints for managing user accounts.
+
+*   **Endpoint:** `/v1/admin/users.php`
+*   **Authentication:** JWT Required.
+*   **Authorization:** `superadmin` role is recommended for full access.
+
+### 2.1 Get Users
+
+*   **Method:** `GET`
+*   **Query Parameters (Optional):**
+    *   `id`: Get a single user by ID.
+    *   `role`: Filter by role (`superadmin`, `school`, `teacher`).
+    *   `school_name`: Filter by school name.
+    *   `page`: Page number for pagination (default: `1`).
+    *   `limit`: Number of items per page (default: `10`).
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "count": 25,
+      "data": [
+        {
+          "id": 5,
+          "name": "Jane Doe",
+          "email": "jane.doe@example.com",
+          "role": "teacher",
+          "school_name": "Central High School",
+          "employee_id": "T001"
+        }
+      ]
+    }
+    ```
+
+### 2.2 Create User (Admin)
+
+*   **Method:** `POST`
+*   **Request Body:**
+    ```json
+    {
+      "name": "New User",
+      "email": "new.user@example.com",
+      "password": "default_password"
+    }
+    ```
+*   **Success Response (201 Created):**
+    ```json
+    {
+      "status": true,
+      "message": "User registered successfully."
+    }
+    ```
+
+### 2.3 Update User
+
+*   **Method:** `PUT`
+*   **Request Body:**
+    ```json
+    {
+      "id": 5,
+      "name": "Jane Smith",
+      "role": "school",
+      "school_name": "New Academy",
+      "employee_id": "P005"
+    }
+    ```
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "message": "User updated successfully."
+    }
+    ```
+
+### 2.4 Delete User
+
+*   **Method:** `DELETE`
+*   **Request Body:**
+    ```json
+    {
+      "id": 5
+    }
+    ```
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "message": "User deleted successfully."
+    }
+    ```
+
+---
+
+---
+
+## 3. Teacher Appraisals
+
+Endpoints for managing teacher self-appraisal forms.
+
+*   **Endpoint:** `/v1/admin/appraisals.php`
+*   **Authentication:** JWT Required. Access is role-dependent.
+
+### 3.1 Get Appraisals
+
+*   **Method:** `GET`
+*   **Authorization:**
+    *   `superadmin`: Can view all appraisals.
+    *   `school`: Can only view appraisals from teachers in their school.
+    *   `teacher`: Can only view their own appraisals.
+*   **Query Parameters (Optional):**
+    *   `id`: Get a single appraisal by its ID.
+    *   `session_year`: Filter by session (e.g., `2023-2024`).
+    *   `status`: Filter by status (`draft`, `submitted`, `reviewed`, etc.).
+    *   `search`: Search by teacher's full name or employee code.
+    *   `page`: Page number for pagination (default: `1`).
+    *   `limit`: Number of items per page (default: `10`).
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "total_appraisals": 50,
+      "count": 10,
+      "data": [
+        {
+          "id": 1,
+          "session_year": "2023-2024",
+          "full_name": "Jane Doe",
+          "status": "submitted",
+          "school_name": "Central High School"
+        }
+      ]
+    }
+    ```
+
+### 3.2 Create Appraisal
+
+*   **Method:** `POST`
+*   **Authorization:** `teacher` role only.
+*   **Request Body:**
+    ```json
+    {
+      "session_year": "2024-2025"
+    }
+    ```
+*   **Success Response (201 Created):**
+    ```json
+    {
+      "status": true,
+      "message": "Teacher appraisal created successfully.",
+      "appraisal_id": 123
+    }
+    ```
+
+### 3.3 Update Appraisal
+
+*   **Method:** `PUT`
+*   **Authorization:**
+    *   `superadmin`: Can update any appraisal.
+    *   `school`: Can update appraisals from their school (e.g., to add comments, approve).
+    *   `teacher`: Can only update their own appraisals, and only if `status` is `draft`.
+*   **Request Body:**
+    ```json
+    {
+      "id": 123,
+      "designation": "Senior Teacher",
+      "status": "submitted"
+    }
+    ```
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "message": "Teacher appraisal updated successfully."
+    }
+    ```
+
+### 3.4 Delete Appraisal
+
+*   **Method:** `DELETE`
+*   **Authorization:** `superadmin` role only.
+*   **Query Parameters:**
+    *   `id`: The ID of the appraisal to delete (e.g., `/v1/admin/appraisals.php?id=123`).
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "message": "Teacher appraisal deleted successfully."
+    }
+    ```
+
+---
+
+---
+
+## 4. School Inspections
+
+Endpoints for managing school inspection forms.
+
+*   **Endpoint:** `/v1/admin/inspections.php`
+*   **Authentication:** JWT Required. Access is role-dependent.
+
+### 4.1 Get Inspections
+
+*   **Method:** `GET`
+*   **Authorization:**
+    *   `superadmin`: Can view all inspections.
+    *   `school`: Can only view inspections for their own school.
+    *   `teacher`: No access.
+*   **Query Parameters (Optional):**
+    *   `id`, `session_year`, `school_name`, `page`, `limit`, `search`.
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "count": 5,
+      "data": [
+        {
+          "id": 1,
+          "session_year": "2023-2024",
+          "school_name": "Central High School",
+          "status": "inspected"
+        }
+      ]
+    }
+    ```
+
+### 4.2 Create Inspection
+
+*   **Method:** `POST`
+*   **Authorization:** `superadmin` or `school` roles.
+*   **Request Body:**
+    *   **For `superadmin`:**
+        ```json
+        {
+          "school_name": "A School Name",
+          "session_year": "2024-2025"
+        }
+        ```
+    *   **For `school`:**
+        ```json
+        {
+          "session_year": "2024-2025"
+        }
+        ```
+*   **Success Response (201 Created):**
+    ```json
+    {
+      "status": true,
+      "message": "School inspection created successfully.",
+      "inspection_id": 45
+    }
+    ```
+
+### 4.3 Update Inspection
+
+*   **Method:** `PUT`
+*   **Authorization:** `superadmin` or `school` roles.
+*   **Request Body:**
+    ```json
+    {
+      "id": 45,
+      "status": "approved",
+      "inspector_name": "Dr. Smith"
+    }
+    ```
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "message": "School inspection updated successfully."
+    }
+    ```
+
+### 4.4 Delete Inspection
+
+*   **Method:** `DELETE`
+*   **Authorization:** `superadmin` role only.
+*   **Query Parameters:**
+    *   `id`: The ID of the inspection to delete (e.g., `/v1/admin/inspections.php?id=45`).
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "message": "School inspection deleted successfully."
+    }
+    ```
+
+---
+
+---
+
+## 5. File Upload
+
+*   **Endpoint:** `POST /v1/admin/upload.php`
+*   **Method:** `POST`
+*   **Authentication:** JWT Required.
+*   **Request Type:** `multipart/form-data`
+*   **Form Fields:**
+    *   `file`: The file to be uploaded.
+    *   `folder`: The destination folder. Allowed values: `appraisal`, `inspection`, `avatars`.
+    *   `old_file` (Optional): The name of a file to be deleted after the new one is successfully uploaded.
+*   **Success Response (200 OK):**
+    ```json
+    {
+      "status": true,
+      "message": "File uploaded successfully.",
+      "uploaded_file": "1701180000-unique-filename.pdf",
+      "folder": "appraisal"
+    }
+    ```
