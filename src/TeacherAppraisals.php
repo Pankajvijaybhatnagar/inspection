@@ -13,7 +13,7 @@ class TeacherAppraisals
      * Note: Field names are converted to snake_case for database convention.
      */
     private $appraisalsTableFields = [
-        'id', 'created_by', 'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
+        'id', 'created_by', 'session_year', 'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
         'contact_number', 'email', 'date_of_joining', 'total_experience', 'highest_qualification',
         'professional_qualification', 'additional_certifications', 'classes_subjects_taught', 'teaching_hours',
         'syllabus_completion', 'lesson_planning', 'teaching_aids', 'teaching_methods', 'student_engagement',
@@ -42,7 +42,7 @@ class TeacherAppraisals
      * 'id', 'created_at', and 'updated_at' are typically managed by the database.
      */
     private $updatableAppraisalFields = [
-        'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
+        'session_year', 'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
         'contact_number', 'email', 'date_of_joining', 'total_experience', 'highest_qualification',
         'professional_qualification', 'additional_certifications', 'classes_subjects_taught', 'teaching_hours',
         'syllabus_completion', 'lesson_planning', 'teaching_aids', 'teaching_methods', 'student_engagement',
@@ -90,23 +90,23 @@ class TeacherAppraisals
         $setParts = [];
         $params = [];
 
-        // Define required fields for creating a new appraisal
-        if (empty($data['employee_code']) || empty($data['full_name']) || empty($data['created_by'])) {
+        // Define required fields for creating a new draft appraisal
+        if (empty($data['created_by']) || empty($data['session_year'])) {
             http_response_code(400);
             return [
                 'status' => false,
-                'message' => 'employee_code, full_name, and created_by are required.'
+                'message' => 'created_by and session_year are required.'
             ];
         }
 
-        // Check if an appraisal for this employee already exists (assuming one active appraisal per employee)
-        $stmtCheck = $this->db->prepare("SELECT id FROM teacher_appraisals WHERE employee_code = :employee_code AND status = 'active'");
-        $stmtCheck->execute(['employee_code' => $data['employee_code']]);
+        // Check if an appraisal for this user already exists for the given session year.
+        $stmtCheck = $this->db->prepare("SELECT id FROM teacher_appraisals WHERE created_by = :created_by AND session_year = :session_year");
+        $stmtCheck->execute(['created_by' => $data['created_by'], 'session_year' => $data['session_year']]);
         if ($stmtCheck->fetch()) {
             http_response_code(409);
             return [
                 'status' => false,
-                'message' => 'An active appraisal for this employee already exists.'
+                'message' => 'An appraisal for this user and session year already exists.'
             ];
         }
 

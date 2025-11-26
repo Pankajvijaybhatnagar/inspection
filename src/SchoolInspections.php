@@ -13,7 +13,7 @@ class SchoolInspections
      * Note: Field names are converted to snake_case for database convention.
      */
     private $inspectionsTableFields = [
-        'id', 'school_name', 'address', 'city', 'state', 'pincode', 'email', 'phone', 'website',
+        'id', 'created_by', 'session_year', 'school_name', 'address', 'city', 'state', 'pincode', 'email', 'phone', 'website',
         'year_established', 'school_type', 'medium', 'school_category', 'application_type',
         'affiliation_number', 'school_code', 'affiliation_status', 'affiliation_validity',
         'classes_from', 'classes_to', 'proposed_classes', 'trust_name', 'registration_number',
@@ -47,7 +47,7 @@ class SchoolInspections
      * File fields are handled separately and not included here.
      */
     private $updatableInspectionFields = [
-        'school_name', 'address', 'city', 'state', 'pincode', 'email', 'phone', 'website',
+        'session_year', 'school_name', 'address', 'city', 'state', 'pincode', 'email', 'phone', 'website',
         'year_established', 'school_type', 'medium', 'school_category', 'application_type',
         'affiliation_number', 'school_code', 'affiliation_status', 'affiliation_validity',
         'classes_from', 'classes_to', 'proposed_classes', 'trust_name', 'registration_number',
@@ -99,12 +99,23 @@ class SchoolInspections
         $setParts = [];
         $params = [];
 
-        // Define required fields for creating a new inspection
-        if (empty($data['school_name']) || empty($data['city']) || empty($data['state'])) {
+        // Define required fields for creating a new draft inspection
+        if (empty($data['school_name']) || empty($data['created_by']) || empty($data['session_year'])) {
             http_response_code(400);
             return [
                 'status' => false,
-                'message' => 'school_name, city, and state are required.'
+                'message' => 'school_name, created_by, and session_year are required.'
+            ];
+        }
+
+        // Check if an inspection for this school already exists for the given session year.
+        $stmtCheck = $this->db->prepare("SELECT id FROM school_inspections WHERE school_name = :school_name AND session_year = :session_year");
+        $stmtCheck->execute(['school_name' => $data['school_name'], 'session_year' => $data['session_year']]);
+        if ($stmtCheck->fetch()) {
+            http_response_code(409);
+            return [
+                'status' => false,
+                'message' => 'An inspection for this school and session year already exists.'
             ];
         }
 
