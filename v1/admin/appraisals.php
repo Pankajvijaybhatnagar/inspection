@@ -3,6 +3,7 @@
 
 require_once __DIR__ . '/../../src/middlewares/cors.php';
 require_once __DIR__ . '/../../src/TeacherAppraisals.php'; // Require the TeacherAppraisals class
+require_once __DIR__ . '/../../src/EmailPasswordAuth.php';
 require_once __DIR__ . '/../../src/middlewares/auth.php';
 
 header('Content-Type: application/json');
@@ -20,10 +21,10 @@ switch ($method) {
         $input = json_decode(file_get_contents("php://input"), true);
 
         // --- AUTHORIZATION ---
-        // Only users (teachers) can create their own appraisals.
-        if ($user['role'] !== 'user') {
+        // Only teachers can create their own appraisals.
+        if ($user['role'] !== 'teacher') {
             http_response_code(403);
-            echo json_encode(['status' => false, 'message' => 'Forbidden: Only users can create appraisals.']);
+            echo json_encode(['status' => false, 'message' => 'Forbidden: Only teachers can create appraisals.']);
             exit;
         }
 
@@ -40,11 +41,19 @@ switch ($method) {
         $filters = $_GET;
 
         // --- AUTHORIZATION ---
-        // If the user is a 'user' (teacher), force the filter to only show their own appraisals.
-        if ($user['role'] === 'user') {
+        // A teacher can only see their own appraisals.
+        if ($user['role'] === 'teacher') {
             $filters['created_by'] = $user['id'];
+        } 
+        // A school can only see appraisals from their own school.
+        elseif ($user['role'] === 'school') {
+            // We need to get the school name of the logged-in user.
+            $auth = new EmailPasswordAuth();
+            $schoolUserData = $auth->getUsers(['id' => $user['id']]);
+            if (!empty($schoolUserData['data'][0]['school_name'])) {
+                $filters['school_name'] = $schoolUserData['data'][0]['school_name'];
+            }
         }
-        // Admins and Superadmins can see all appraisals based on the filters they provide.
 
         $result = $teacherAppraisals->getAppraisals($filters);
         echo json_encode($result);
@@ -62,12 +71,12 @@ switch ($method) {
         }
 
         // --- AUTHORIZATION ---
-        if ($user['role'] === 'user') {
+        if ($user['role'] === 'teacher') {
             // A user can only update their own appraisal, and only if it's a draft.
             $appraisalData = $teacherAppraisals->getAppraisals(['id' => $appraisalId, 'created_by' => $user['id']]);
 
             if (empty($appraisalData['data'])) {
-                http_response_code(403); // Forbidden, as it's not their appraisal
+                http_response_code(404); // Not Found, as they shouldn't even know it exists.
                 echo json_encode(['status' => false, 'message' => 'Forbidden: You can only update your own appraisals.']);
                 exit;
             }
@@ -78,7 +87,25 @@ switch ($method) {
                 exit;
             }
         }
-        // Admins and Superadmins can update any appraisal.
+        elseif ($user['role'] === 'school') {
+            // A school can only update appraisals from their own school.
+            $auth = new EmailPasswordAuth();
+            $schoolUserData = $auth->getUsers(['id' => $user['id']]);
+            $schoolName = $schoolUserData['data'][0]['school_name'] ?? null;
+
+            if (!$schoolName) {
+                http_response_code(403);
+                echo json_encode(['status' => false, 'message' => 'Forbidden: Your account is not associated with a school.']);
+                exit;
+            }
+
+            $appraisalData = $teacherAppraisals->getAppraisals(['id' => $appraisalId, 'school_name' => $schoolName]);
+            if (empty($appraisalData['data'])) {
+                http_response_code(404);
+                echo json_encode(['status' => false, 'message' => 'Appraisal not found in your school.']);
+                exit;
+            }
+        }
 
         $result = $teacherAppraisals->updateAppraisal($appraisalId, $input);
         echo json_encode($result);

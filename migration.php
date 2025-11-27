@@ -9,7 +9,7 @@ $createUserTableSql = 'CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) DEFAULT NULL,
     name VARCHAR(50) NOT NULL,
-    role ENUM("superadmin","admin","volunteer","user") DEFAULT "user",
+    role ENUM("superadmin", "school", "teacher") DEFAULT "teacher",
     access JSON DEFAULT NULL,
     avatar VARCHAR(255) DEFAULT NULL,
     points INT DEFAULT 0,
@@ -21,6 +21,8 @@ $db->createTable($createUserTableSql);
 $createUserDetailsTableSql = 'CREATE TABLE IF NOT EXISTS user_details (
     user_id INT NOT NULL,
     address VARCHAR(255) DEFAULT NULL,
+    school_name VARCHAR(255) DEFAULT NULL,
+    employee_id VARCHAR(100) DEFAULT NULL,
     city VARCHAR(100) DEFAULT NULL,
     district VARCHAR(100) DEFAULT NULL,
     state VARCHAR(100) DEFAULT NULL,
@@ -84,6 +86,7 @@ $createTeacherAppraisalsTableSql = 'CREATE TABLE IF NOT EXISTS teacher_appraisal
     id INT AUTO_INCREMENT PRIMARY KEY,
     created_by INT NOT NULL,
     session_year VARCHAR(20) DEFAULT NULL,
+    school_name VARCHAR(255) DEFAULT NULL,
     
     -- 1. Personal Information
     full_name VARCHAR(255) DEFAULT NULL,
@@ -435,3 +438,15 @@ $db->createTable($createSchoolListTableSql);
 $alterSchoolInspectionsAddSession = 'ALTER TABLE school_inspections
     ADD COLUMN session_year VARCHAR(20) NOT NULL AFTER created_by';
 $db->alterTable('school_inspections',$alterSchoolInspectionsAddSession);
+
+$alterUserDetailsAddSchool = 'ALTER TABLE user_details
+    ADD COLUMN school_name VARCHAR(255) DEFAULT NULL AFTER address';
+$db->alterTable('user_details', $alterUserDetailsAddSchool);
+
+$alterUserDetailsAddEmployeeId = 'ALTER TABLE user_details
+    ADD COLUMN employee_id VARCHAR(100) DEFAULT NULL AFTER school_name';
+$db->alterTable('user_details', $alterUserDetailsAddEmployeeId);
+
+$alterTeacherAppraisalsAddSchool = 'ALTER TABLE teacher_appraisals
+    ADD COLUMN school_name VARCHAR(255) DEFAULT NULL AFTER session_year';
+$db->alterTable('teacher_appraisals', $alterTeacherAppraisalsAddSchool);

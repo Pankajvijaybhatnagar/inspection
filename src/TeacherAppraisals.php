@@ -13,7 +13,7 @@ class TeacherAppraisals
      * Note: Field names are converted to snake_case for database convention.
      */
     private $appraisalsTableFields = [
-        'id', 'created_by', 'session_year', 'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
+        'id', 'created_by', 'session_year', 'school_name', 'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
         'contact_number', 'email', 'date_of_joining', 'total_experience', 'highest_qualification',
         'professional_qualification', 'additional_certifications', 'classes_subjects_taught', 'teaching_hours',
         'syllabus_completion', 'lesson_planning', 'teaching_aids', 'teaching_methods', 'student_engagement',
@@ -42,7 +42,7 @@ class TeacherAppraisals
      * 'id', 'created_at', and 'updated_at' are typically managed by the database.
      */
     private $updatableAppraisalFields = [
-        'session_year', 'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
+        'session_year', 'school_name', 'full_name', 'employee_code', 'designation', 'department', 'date_of_birth', 'gender',
         'contact_number', 'email', 'date_of_joining', 'total_experience', 'highest_qualification',
         'professional_qualification', 'additional_certifications', 'classes_subjects_taught', 'teaching_hours',
         'syllabus_completion', 'lesson_planning', 'teaching_aids', 'teaching_methods', 'student_engagement',
@@ -163,9 +163,11 @@ class TeacherAppraisals
 
         $select = "SELECT 
                         ta.*, 
-                        u.name as creator_name
+                        u.name as creator_name,
+                        ud.school_name as teacher_school_name 
                    FROM teacher_appraisals ta
-                   LEFT JOIN users u ON ta.created_by = u.id";
+                   LEFT JOIN users u ON ta.created_by = u.id
+                   LEFT JOIN user_details ud ON u.id = ud.user_id";
 
         $countSql = "SELECT COUNT(ta.id) FROM teacher_appraisals ta";
         $totalAppraisalsSql = "SELECT COUNT(id) FROM teacher_appraisals";
@@ -178,11 +180,6 @@ class TeacherAppraisals
                 $whereParts[] = "ta.$field = :$field";
                 $params[$field] = $value;
             }
-        }
-
-        if (!empty($filters['search'])) {
-            $whereParts[] = "(ta.full_name LIKE :search OR ta.employee_code LIKE :search)";
-            $params['search'] = '%' . $filters['search'] . '%';
         }
 
         $whereClause = !empty($whereParts) ? " WHERE " . implode(' AND ', $whereParts) : "";
